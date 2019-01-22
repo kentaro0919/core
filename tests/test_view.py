@@ -285,8 +285,8 @@ class TestView:
 
     def test_throws_exception_on_incorrect_type(self):
         view = self.container.make('ViewClass')
-        # with pytest.raises(ViewException):
-        assert view.render('test', {'', ''})
+        with pytest.raises(ViewException):
+            assert view.render('test', {'', ''})
 
 
 class MockAdminUser:
