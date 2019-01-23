@@ -438,6 +438,7 @@ class ViewRoute(BaseHttpRoute):
     def get_response(self):
         return self.request.app().make('ViewClass').render(self.template, self.dictionary).rendered_template
 
+
 class Redirect(BaseHttpRoute):
 
     def __init__(self, current_route, future_route, status=302, methods=['GET']):
@@ -460,6 +461,7 @@ class Redirect(BaseHttpRoute):
 
     def get_response(self):
         return self.request.redirect(self.future_route, status=self.status)
+
 
 class RouteGroup():
     """Class for specifying Route Groups."""
