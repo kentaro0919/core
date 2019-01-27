@@ -263,6 +263,7 @@ class TestRequest:
 
         assert request.route('test.url') == '/test/url'
         assert request.route('test.id', {'id': 1}) == '/test/url/1'
+        assert request.route('test.id', [1]) == '/test/url/1'
 
     def test_request_redirection(self):
         app = App()
