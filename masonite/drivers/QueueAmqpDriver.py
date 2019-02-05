@@ -1,13 +1,13 @@
 """ Driver for AMQP support """
 
+import inspect
 import pickle
-import threading
 
 from config import queue
 from masonite.contracts import QueueContract
 from masonite.drivers import BaseDriver
-from masonite.app import App
 from masonite.exceptions import DriverLibraryNotFound
+from masonite.helpers import HasColoredCommands
 
 if 'amqp' in queue.DRIVERS:
     listening_channel = queue.DRIVERS['amqp']['channel']
@@ -15,19 +15,17 @@ else:
     listening_channel = 'default'
 
 
-class QueueAmqpDriver(QueueContract, BaseDriver):
+class QueueAmqpDriver(QueueContract, BaseDriver, HasColoredCommands):
 
     def __init__(self):
         """Queue AMQP Driver
-
-        Arguments:
-            Container {masonite.app.App} -- The application container.
         """
 
         # Start the connection
         self.connect()
 
     def _publish(self, body):
+
         self.channel.basic_publish(exchange='',
                                    routing_key=listening_channel,
                                    body=pickle.dumps(
@@ -68,21 +66,21 @@ class QueueAmqpDriver(QueueContract, BaseDriver):
             queue.DRIVERS['amqp']['vhost'] if 'vhost' in queue.DRIVERS['amqp'] and queue.DRIVERS['amqp']['vhost'] else '%2F'
         )))
 
-        return self
-
-    def consume(self, queue_channel, durable=True, fair=False):
         self.channel = self.connection.channel()
 
-        self.channel.queue_declare(queue=queue_channel, durable=durable)
+        self.channel.queue_declare(queue=listening_channel, durable=True)
+
+        return self
+
+    def consume(self):
+        self.success('[*] Waiting to process jobs on the "{}" channel. To exit press CTRL+C'.format(
+            listening_channel))
 
         self.channel.basic_consume(self.work,
-                              queue=queue_channel)
+                                   queue=listening_channel)
 
-        if fair:
+        if True:
             self.channel.basic_qos(prefetch_count=1)
-
-        print('[*] Waiting to process jobs on the "{}" channel. To exit press CTRL+C'.format(
-            queue_channel))
 
         return self.channel.start_consuming()
 
@@ -101,9 +99,8 @@ class QueueAmqpDriver(QueueContract, BaseDriver):
             except AttributeError:
                 obj(*args)
 
-            self.info('[\u2713] Job Successfully Processed')
+            self.success('[\u2713] Job Successfully Processed')
         except Exception as e:
-            print(pickle.loads(body))
-            self.warning('Job Failed: {}'.format(str(e)))
+            self.danger('Job Failed: {}'.format(str(e)))
 
         ch.basic_ack(delivery_tag=method.delivery_tag)
