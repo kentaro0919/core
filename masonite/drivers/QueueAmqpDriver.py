@@ -25,30 +25,7 @@ class QueueAmqpDriver(QueueContract, BaseDriver):
         """
 
         # Start the connection
-        self._connect()
-
-    def _connect(self):
-        try:
-            import pika
-            self.pika = pika
-        except ImportError:
-            raise DriverLibraryNotFound(
-                "Could not find the 'pika' library. Run pip install pika to fix this.")
-
-        connection = pika.BlockingConnection(pika.URLParameters('amqp://{}:{}@{}{}/{}'.format(
-            queue.DRIVERS['amqp']['username'],
-            queue.DRIVERS['amqp']['password'],
-            queue.DRIVERS['amqp']['host'],
-            ':'
-            + str(queue.DRIVERS['amqp']['port']) if 'port' in queue.DRIVERS['amqp'] and queue.DRIVERS['amqp']['port'] else '',
-            queue.DRIVERS['amqp']['vhost'] if 'vhost' in queue.DRIVERS['amqp'] and queue.DRIVERS['amqp']['vhost'] else '%2F'
-        )))
-
-        # Get the channel
-        self.channel = connection.channel()
-
-        # Declare what queue we are working with
-        self.channel.queue_declare(queue=listening_channel, durable=True)
+        self.connect()
 
     def _publish(self, body):
         self.channel.basic_publish(exchange='',
@@ -72,5 +49,61 @@ class QueueAmqpDriver(QueueContract, BaseDriver):
             try:
                 self._publish({'obj': obj, 'args': args, 'callback': callback})
             except self.pika.exceptions.ConnectionClosed:
-                self._connect()
+                self.connect()
                 self._publish({'obj': obj, 'args': args})
+
+    def connect(self):
+        try:
+            import pika
+            self.pika = pika
+        except ImportError:
+            raise DriverLibraryNotFound(
+                "Could not find the 'pika' library. Run pip install pika to fix this.")
+
+        self.connection = pika.BlockingConnection(pika.URLParameters('amqp://{}:{}@{}{}/{}'.format(
+            queue.DRIVERS['amqp']['username'],
+            queue.DRIVERS['amqp']['password'],
+            queue.DRIVERS['amqp']['host'],
+            ':' + str(queue.DRIVERS['amqp']['port']) if 'port' in queue.DRIVERS['amqp'] and queue.DRIVERS['amqp']['port'] else '',
+            queue.DRIVERS['amqp']['vhost'] if 'vhost' in queue.DRIVERS['amqp'] and queue.DRIVERS['amqp']['vhost'] else '%2F'
+        )))
+
+        return self
+
+    def consume(self, queue_channel, durable=True, fair=False):
+        self.channel = self.connection.channel()
+
+        self.channel.queue_declare(queue=queue_channel, durable=durable)
+
+        self.channel.basic_consume(self.work,
+                              queue=queue_channel)
+
+        if fair:
+            self.channel.basic_qos(prefetch_count=1)
+
+        print('[*] Waiting to process jobs on the "{}" channel. To exit press CTRL+C'.format(
+            queue_channel))
+
+        return self.channel.start_consuming()
+
+    def work(self, ch, method, properties, body):
+        from wsgi import container
+        job = pickle.loads(body)
+        obj = job['obj']
+        args = job['args']
+        callback = job['callback']
+
+        try:
+            try:
+                if inspect.isclass(obj):
+                    obj = container.resolve(obj)
+                getattr(obj, callback)(*args)
+            except AttributeError:
+                obj(*args)
+
+            self.info('[\u2713] Job Successfully Processed')
+        except Exception as e:
+            print(pickle.loads(body))
+            self.warning('Job Failed: {}'.format(str(e)))
+
+        ch.basic_ack(delivery_tag=method.delivery_tag)
