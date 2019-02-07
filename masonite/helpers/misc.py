@@ -53,11 +53,12 @@ def clean_request_input(value):
 
     return value
 
+
 class HasColoredCommands:
 
     def success(self, message):
         print('\033[92m {0} \033[0m'.format(message))
-    
+
     def warning(self, message):
         print('\033[93m {0} \033[0m'.format(message))
 

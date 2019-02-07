@@ -2,7 +2,6 @@ import os
 import shutil
 
 
-
 def make_directory(directory):
     if not os.path.isfile(directory):
         if not os.path.exists(os.path.dirname(directory)):

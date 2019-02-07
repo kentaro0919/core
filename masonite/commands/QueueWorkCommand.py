@@ -27,5 +27,5 @@ class QueueWorkCommand(Command):
             queue = container.make(Queue)
         else:
             queue = container.make(Queue).driver(self.option('driver'))
-        
+
         queue.connect().consume(self.option('channel'))
