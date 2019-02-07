@@ -2,12 +2,14 @@
 
 import inspect
 import pickle
+import time
 
 from config import queue
 from masonite.contracts import QueueContract
 from masonite.drivers import BaseDriver
 from masonite.exceptions import DriverLibraryNotFound
 from masonite.helpers import HasColoredCommands
+import pendulum
 
 if 'amqp' in queue.DRIVERS:
     listening_channel = queue.DRIVERS['amqp']['channel']
@@ -35,7 +37,7 @@ class QueueAmqpDriver(QueueContract, BaseDriver, HasColoredCommands):
                                        delivery_mode=2,  # make message persistent
                                    ))
 
-    def push(self, *objects, args=(), callback='handle'):
+    def push(self, *objects, args=(), callback='handle', ran=1):
         """Push objects onto the amqp stack.
 
         Arguments:
@@ -44,11 +46,12 @@ class QueueAmqpDriver(QueueContract, BaseDriver, HasColoredCommands):
 
         for obj in objects:
             # Publish to the channel for each object
+            payload = {'obj': obj, 'args': args, 'callback': callback, 'created': pendulum.now(), 'ran': ran}
             try:
-                self._publish({'obj': obj, 'args': args, 'callback': callback})
+                self._publish(payload)
             except self.pika.exceptions.ConnectionClosed:
                 self.connect()
-                self._publish({'obj': obj, 'args': args})
+                self._publish(payload)
 
     def connect(self):
         try:
@@ -90,7 +93,8 @@ class QueueAmqpDriver(QueueContract, BaseDriver, HasColoredCommands):
         obj = job['obj']
         args = job['args']
         callback = job['callback']
-
+        ran = job['ran']
+        print(job)
         try:
             try:
                 if inspect.isclass(obj):
@@ -102,5 +106,11 @@ class QueueAmqpDriver(QueueContract, BaseDriver, HasColoredCommands):
             self.success('[\u2713] Job Successfully Processed')
         except Exception as e:
             self.danger('Job Failed: {}'.format(str(e)))
-
+            if ran <= 3:
+                time.sleep(1)
+                self.push(obj, args=args, callback=callback, ran=ran+1)
+            else:
+                if hasattr(obj, 'failed'):
+                    getattr(obj, 'failed')(*args)
+                   
         ch.basic_ack(delivery_tag=method.delivery_tag)
