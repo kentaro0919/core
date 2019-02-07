@@ -10,14 +10,12 @@ from masonite.exceptions import DriverLibraryNotFound
 from masonite import Queue
 
 
-class QueueWorkCommand(Command):
+class QueueFailedCommand(Command):
     """
     Start the queue worker
 
-    queue:work
-        {--c|channel=default : The channel to listen on the queue}
+    queue:failed
         {--d|driver=default : Specify the driver you would like to connect to}
-        {--f|fair : Send jobs to queues that have no jobs instead of randomly selecting a queue}
     """
 
     def handle(self):
@@ -27,5 +25,5 @@ class QueueWorkCommand(Command):
             queue = container.make(Queue)
         else:
             queue = container.make(Queue).driver(self.option('driver'))
-        
-        queue.connect().consume()
+
+        queue.run_failed_jobs()

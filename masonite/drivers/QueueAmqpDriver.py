@@ -94,7 +94,6 @@ class QueueAmqpDriver(QueueContract, BaseDriver, HasColoredCommands):
         args = job['args']
         callback = job['callback']
         ran = job['ran']
-        print(job)
         try:
             try:
                 if inspect.isclass(obj):
@@ -106,11 +105,33 @@ class QueueAmqpDriver(QueueContract, BaseDriver, HasColoredCommands):
             self.success('[\u2713] Job Successfully Processed')
         except Exception as e:
             self.danger('Job Failed: {}'.format(str(e)))
-            if ran <= 3:
+            if ran < 3:
                 time.sleep(1)
                 self.push(obj, args=args, callback=callback, ran=ran+1)
             else:
                 if hasattr(obj, 'failed'):
                     getattr(obj, 'failed')(*args)
-                   
+                self.add_to_failed_queue_table(job)
         ch.basic_ack(delivery_tag=method.delivery_tag)
+    
+    def add_to_failed_queue_table(self, payload):
+        from config.database import DB as schema
+        if schema.get_schema_builder().has_table('failed_jobs'):
+            schema.table('failed_jobs').insert({
+                'driver': 'amqp',
+                'channel': listening_channel,
+                'payload': pickle.dumps(payload),
+                'failed_at': pendulum.now()
+            })
+
+    def run_failed_jobs(self):
+        from config.database import DB as schema
+        try:
+            self.success('Attempting to send failed jobs back to the queue ...')
+            for job in schema.table('failed_jobs').get():
+                payload = pickle.loads(job.payload)
+                schema.table('failed_jobs').where('payload', job.payload).delete()
+                self.push(payload['obj'], args=payload['args'], callback=payload['callback'])
+        except Exception:
+            self.danger('Could not get the failed_jobs table')
+
