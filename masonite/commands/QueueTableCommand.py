@@ -14,7 +14,7 @@ from masonite.helpers.filesystem import copy_migration
 
 class QueueTableCommand(Command):
     """
-    Start the queue worker
+    Create migration files for the queue feature
 
     queue:table
     """

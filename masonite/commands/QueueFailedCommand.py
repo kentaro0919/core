@@ -12,7 +12,7 @@ from masonite import Queue
 
 class QueueFailedCommand(Command):
     """
-    Start the queue worker
+    Run all failed jobs
 
     queue:failed
         {--d|driver=default : Specify the driver you would like to connect to}
