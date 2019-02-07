@@ -1,15 +1,9 @@
-""" A QueueWorkCommand Command """
+""" A QueueTableCommand Command """
 
-import inspect
-import pickle
 
 from cleo import Command
 
-from config import queue
-from masonite.exceptions import DriverLibraryNotFound
-from masonite import Queue
 from masonite.helpers.filesystem import copy_migration
-
 
 
 class QueueTableCommand(Command):
