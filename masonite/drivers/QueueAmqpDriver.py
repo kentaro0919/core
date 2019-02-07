@@ -110,7 +110,7 @@ class QueueAmqpDriver(QueueContract, BaseDriver, HasColoredCommands):
                 self.push(obj, args=args, callback=callback, ran=ran+1)
             else:
                 if hasattr(obj, 'failed'):
-                    getattr(obj, 'failed')(*args)
+                    getattr(obj, 'failed')(job, str(e))
                 self.add_to_failed_queue_table(job)
         ch.basic_ack(delivery_tag=method.delivery_tag)
     
