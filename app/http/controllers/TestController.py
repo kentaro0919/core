@@ -43,5 +43,5 @@ class TestController:
 
     def queue(self, queue: Queue):
         # queue.driver('amqp').push(self.bad)
-        queue.driver('amqp').push(TestJob)
+        queue.driver('amqp').push(TestJob, channel='default')
         return 'queued'

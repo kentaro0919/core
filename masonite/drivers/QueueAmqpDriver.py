@@ -24,12 +24,13 @@ class QueueAmqpDriver(QueueContract, BaseDriver, HasColoredCommands):
         """
 
         # Start the connection
+        self.publishing_channel = listening_channel
         self.connect()
 
     def _publish(self, body):
 
         self.channel.basic_publish(exchange='',
-                                   routing_key=listening_channel,
+                                   routing_key=self.publishing_channel,
                                    body=pickle.dumps(
                                        body
                                    ),
@@ -37,13 +38,15 @@ class QueueAmqpDriver(QueueContract, BaseDriver, HasColoredCommands):
                                        delivery_mode=2,  # make message persistent
                                    ))
 
-    def push(self, *objects, args=(), callback='handle', ran=1):
+    def push(self, *objects, args=(), callback='handle', ran=1, channel=None):
         """Push objects onto the amqp stack.
 
         Arguments:
             objects {*args of objects} - This can be several objects as parameters into this method.
         """
-
+        if channel:
+            self.publishing_channel = channel
+            
         for obj in objects:
             # Publish to the channel for each object
             payload = {'obj': obj, 'args': args, 'callback': callback, 'created': pendulum.now(), 'ran': ran}
@@ -71,16 +74,16 @@ class QueueAmqpDriver(QueueContract, BaseDriver, HasColoredCommands):
 
         self.channel = self.connection.channel()
 
-        self.channel.queue_declare(queue=listening_channel, durable=True)
+        self.channel.queue_declare(queue=self.publishing_channel, durable=True)
 
         return self
 
-    def consume(self):
+    def consume(self, channel):
         self.success('[*] Waiting to process jobs on the "{}" channel. To exit press CTRL+C'.format(
-            listening_channel))
+            channel))
 
         self.channel.basic_consume(self.work,
-                                   queue=listening_channel)
+                                   queue=channel)
 
         if True:
             self.channel.basic_qos(prefetch_count=1)
