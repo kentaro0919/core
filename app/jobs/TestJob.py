@@ -19,5 +19,5 @@ class TestJob(Queueable):
 
         return 2/0
     
-    def failed(self):
+    def failed(self, payload, error):
         print('running a failed job hook')
