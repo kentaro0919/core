@@ -11,6 +11,7 @@ from masonite.contracts import QueueContract
 from masonite.drivers import BaseQueueDriver
 from masonite.exceptions import DriverLibraryNotFound
 from masonite.helpers import HasColoredCommands
+from masonite.queues import Queueable
 
 if 'amqp' in queue.DRIVERS:
     listening_channel = queue.DRIVERS['amqp']['channel']
@@ -97,23 +98,28 @@ class QueueAmqpDriver(QueueContract, BaseQueueDriver, HasColoredCommands):
         args = job['args']
         callback = job['callback']
         ran = job['ran']
+
         try:
             try:
                 if inspect.isclass(obj):
                     obj = container.resolve(obj)
+
                 getattr(obj, callback)(*args)
+
             except AttributeError:
                 obj(*args)
 
             self.success('[\u2713] Job Successfully Processed')
         except Exception as e:
             self.danger('Job Failed: {}'.format(str(e)))
-            if ran < 3:
+
+            if ran < 3 and isinstance(obj, Queueable):
                 time.sleep(1)
-                self.push(obj, args=args, callback=callback, ran=ran + 1)
+                self.push(obj.__class__, args=args, callback=callback, ran=ran + 1)
             else:
                 if hasattr(obj, 'failed'):
                     getattr(obj, 'failed')(job, str(e))
-                self.add_to_failed_queue_table(job)
-        ch.basic_ack(delivery_tag=method.delivery_tag)
 
+                self.add_to_failed_queue_table(job)
+
+        ch.basic_ack(delivery_tag=method.delivery_tag)
