@@ -8,7 +8,7 @@ import pendulum
 
 from config import queue
 from masonite.contracts import QueueContract
-from masonite.drivers import BaseDriver
+from masonite.drivers import BaseQueueDriver
 from masonite.exceptions import DriverLibraryNotFound
 from masonite.helpers import HasColoredCommands
 
@@ -18,7 +18,7 @@ else:
     listening_channel = 'default'
 
 
-class QueueAmqpDriver(QueueContract, BaseDriver, HasColoredCommands):
+class QueueAmqpDriver(QueueContract, BaseQueueDriver, HasColoredCommands):
 
     def __init__(self):
         """Queue AMQP Driver
@@ -88,7 +88,6 @@ class QueueAmqpDriver(QueueContract, BaseDriver, HasColoredCommands):
 
         if fair:
             self.channel.basic_qos(prefetch_count=1)
-
         return self.channel.start_consuming()
 
     def work(self, ch, method, properties, body):
@@ -118,23 +117,3 @@ class QueueAmqpDriver(QueueContract, BaseDriver, HasColoredCommands):
                 self.add_to_failed_queue_table(job)
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
-    def add_to_failed_queue_table(self, payload):
-        from config.database import DB as schema
-        if schema.get_schema_builder().has_table('failed_jobs'):
-            schema.table('failed_jobs').insert({
-                'driver': 'amqp',
-                'channel': listening_channel,
-                'payload': pickle.dumps(payload),
-                'failed_at': pendulum.now()
-            })
-
-    def run_failed_jobs(self):
-        from config.database import DB as schema
-        try:
-            self.success('Attempting to send failed jobs back to the queue ...')
-            for job in schema.table('failed_jobs').get():
-                payload = pickle.loads(job.payload)
-                schema.table('failed_jobs').where('payload', job.payload).delete()
-                self.push(payload['obj'], args=payload['args'], callback=payload['callback'])
-        except Exception:
-            self.danger('Could not get the failed_jobs table')
