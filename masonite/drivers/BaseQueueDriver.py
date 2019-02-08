@@ -1,16 +1,18 @@
 """Base queue driver."""
 
 import pickle
+
 import pendulum
 
-from masonite.helpers import HasColoredCommands
-from masonite.drivers import BaseDriver
 from config import queue
+from masonite.drivers import BaseDriver
+from masonite.helpers import HasColoredCommands
 
 if 'amqp' in queue.DRIVERS:
     listening_channel = queue.DRIVERS['amqp']['channel']
 else:
     listening_channel = 'default'
+
 
 class BaseQueueDriver(BaseDriver, HasColoredCommands):
 
