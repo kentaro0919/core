@@ -5,9 +5,8 @@ import pickle
 
 from cleo import Command
 
-from config import queue
-from masonite.exceptions import DriverLibraryNotFound
 from masonite import Queue
+from masonite.exceptions import DriverLibraryNotFound
 
 
 class QueueWorkCommand(Command):
@@ -18,6 +17,7 @@ class QueueWorkCommand(Command):
         {--c|channel=default : The channel to listen on the queue}
         {--d|driver=default : Specify the driver you would like to connect to}
         {--f|fair : Send jobs to queues that have no jobs instead of randomly selecting a queue}
+        {--f|failed : Send jobs to queues that have no jobs instead of randomly selecting a queue}
     """
 
     def handle(self):
@@ -27,5 +27,9 @@ class QueueWorkCommand(Command):
             queue = container.make(Queue)
         else:
             queue = container.make(Queue).driver(self.option('driver'))
+
+        if self.option('failed'):
+            queue.run_failed_jobs()
+            return
 
         queue.connect().consume(self.option('channel'))
