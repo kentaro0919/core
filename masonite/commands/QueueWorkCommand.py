@@ -17,7 +17,7 @@ class QueueWorkCommand(Command):
         {--c|channel=default : The channel to listen on the queue}
         {--d|driver=default : Specify the driver you would like to connect to}
         {--f|fair : Send jobs to queues that have no jobs instead of randomly selecting a queue}
-        {--f|failed : Run only the failed jobs}
+        {--failed : Run only the failed jobs}
     """
 
     def handle(self):
@@ -32,4 +32,4 @@ class QueueWorkCommand(Command):
             queue.run_failed_jobs()
             return
 
-        queue.connect().consume(self.option('channel'))
+        queue.connect().consume(self.option('channel'), fair=self.option('fair'))
