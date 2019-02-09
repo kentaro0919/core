@@ -19,7 +19,7 @@ else:
     listening_channel = 'default'
 
 
-class QueueAmqpDriver(QueueContract, BaseQueueDriver, HasColoredCommands):
+class QueueAmqpDriver(BaseQueueDriver, QueueContract, HasColoredCommands):
 
     def __init__(self):
         """Queue AMQP Driver
