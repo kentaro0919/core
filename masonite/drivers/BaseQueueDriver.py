@@ -39,3 +39,12 @@ class BaseQueueDriver(BaseDriver, HasColoredCommands):
 
     def push(self, *objects, args=(), callback='handle', ran=1, channel=None):
         raise NotImplementedError
+
+    def connect(self):
+        return self
+    
+    def consume(self, channel, fair=False):
+        raise NotImplementedError('The {} driver does not implement consume'.format(self.__class__.__name__))
+
+    def work(self):
+        raise NotImplementedError('The {} driver does not implement work'.format(self.__class__.__name__))
