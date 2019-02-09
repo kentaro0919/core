@@ -6,9 +6,10 @@ import inspect
 from masonite.contracts import QueueContract
 from masonite.drivers import BaseQueueDriver
 from masonite.app import App
+from masonite.helpers import HasColoredCommands
 
 
-class QueueAsyncDriver(QueueContract, BaseQueueDriver):
+class QueueAsyncDriver(QueueContract, BaseQueueDriver, HasColoredCommands):
     """Queue Aysnc Driver."""
 
     def __init__(self, app: App):
@@ -40,10 +41,10 @@ class QueueAsyncDriver(QueueContract, BaseQueueDriver):
             thread.start()
 
     def connect(self):
-        pass
+        return self
     
     def consume(self, channel, fair=False):
-        pass
+        raise NotImplementedError('The async driver does not implement consume')
     
     def work(self):
-        pass
+        raise NotImplementedError('The async driver does not implement work')
