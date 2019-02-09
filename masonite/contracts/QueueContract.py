@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 class QueueContract(ABC):
 
     @abstractmethod
-    def push(self):
+    def push(self, *objects, args=(), callback='handle', ran=1, channel=None):
         pass
 
     @abstractmethod
