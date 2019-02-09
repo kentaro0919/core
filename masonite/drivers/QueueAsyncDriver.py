@@ -4,11 +4,11 @@ import threading
 import inspect
 
 from masonite.contracts import QueueContract
-from masonite.drivers import BaseDriver
+from masonite.drivers import BaseQueueDriver
 from masonite.app import App
 
 
-class QueueAsyncDriver(QueueContract, BaseDriver):
+class QueueAsyncDriver(QueueContract, BaseQueueDriver):
     """Queue Aysnc Driver."""
 
     def __init__(self, app: App):
@@ -19,7 +19,7 @@ class QueueAsyncDriver(QueueContract, BaseDriver):
         """
         self.container = app
 
-    def push(self, *objects, args=(), callback='handle'):
+    def push(self, *objects, args=(), callback='handle', ran=1, channel=None):
         """Push objects onto the async stack.
 
         Arguments:
@@ -38,3 +38,12 @@ class QueueAsyncDriver(QueueContract, BaseDriver):
                     target=obj, args=args, kwargs={})
 
             thread.start()
+
+    def connect(self):
+        pass
+    
+    def consume(self, channel, fair=False):
+        pass
+    
+    def work(self):
+        pass
