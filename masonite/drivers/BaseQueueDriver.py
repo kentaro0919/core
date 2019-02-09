@@ -42,7 +42,7 @@ class BaseQueueDriver(BaseDriver, HasColoredCommands):
 
     def connect(self):
         return self
-    
+
     def consume(self, channel, fair=False):
         raise NotImplementedError('The {} driver does not implement consume'.format(self.__class__.__name__))
 
