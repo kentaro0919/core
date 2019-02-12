@@ -607,3 +607,14 @@ class TestRequest:
         self.request.request_variables.update({'__token': 'testing', 'application': 'Masonite'})
         assert self.request.only('application') == {'application': 'Masonite'}
         assert self.request.only('__token') == {'__token': 'testing'}
+
+    def test_request_gets_only_clean_output(self):
+        self.request._set_standardized_request_variables({'key': '<img """><script>alert(\'hey\')</script>">'})
+        assert self.request.input('key') == '&lt;img &quot;&quot;&quot;&gt;&lt;script&gt;alert(&#x27;hey&#x27;)&lt;/script&gt;&quot;&gt;'
+        assert self.request.input('key', clean=False) == '<img """><script>alert(\'hey\')</script>">'
+    
+    def test_request_cleans_all_optionally(self):
+        self.request._set_standardized_request_variables({'key': '<img """><script>alert(\'hey\')</script>">'})
+        assert self.request.all()['key'] == '&lt;img &quot;&quot;&quot;&gt;&lt;script&gt;alert(&#x27;hey&#x27;)&lt;/script&gt;&quot;&gt;'
+        assert self.request.all(clean=False)['key'] == '<img """><script>alert(\'hey\')</script>">'
+
