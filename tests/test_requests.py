@@ -631,6 +631,7 @@ class TestRequest:
 
         assert self.request.input('key')['address']['street'] == 'address 1'
         assert self.request.input('key.address.street') == 'address 1'
-        # assert self.request.input('key.') == False
-        # assert self.request.input('key.user') == '1'
-        # assert self.request.input('key.nothing') == False
+        assert self.request.input('key.') == False
+        assert self.request.input('key.user') == '1'
+        assert self.request.input('key.nothing') == False
+        assert self.request.input('key.nothing', default='test') == 'test'
