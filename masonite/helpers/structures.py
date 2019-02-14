@@ -8,14 +8,14 @@ class Dot:
     def dot(self, search, dictionary):
 
         if '.' not in search:
-            return dictionary[search] 
-        
+            return dictionary[search]
+
         searching = search.split('.')
         while len(searching) > 0:
             dic = dictionary
             for search in searching:
                 dic = dic.get(search)
-            
+
             if not isinstance(dic, dict):
                 return dic
 
