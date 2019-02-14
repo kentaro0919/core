@@ -19,7 +19,7 @@ from cryptography.fernet import InvalidToken
 from config import application
 from masonite.auth.Sign import Sign
 from masonite.exceptions import InvalidHTTPStatusCode
-from masonite.helpers import dot, clean_request_input
+from masonite.helpers import dot, clean_request_input, Dot as DictDot
 from masonite.helpers.Extendable import Extendable
 from masonite.helpers.routes import compile_route_to_regex
 from masonite.helpers.status import response_statuses
@@ -76,9 +76,14 @@ class Request(Extendable):
         Returns:
             string
         """
-        if '.' in name:
+        if '.' in name and isinstance(self.request_variables.get(name.split('.')[0]), dict):
+            value = DictDot().dot(name, self.request_variables)
+            if value:
+                return value
+
+        elif '.' in name:
             name = dot(name, "{1}[{.}]")
-        
+
         return clean_request_input(self.request_variables.get(name, default), clean=clean)
 
     def is_post(self):
