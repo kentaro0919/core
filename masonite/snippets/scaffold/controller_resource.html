@@ -5,55 +5,52 @@ class {{ class }}:
     """Class Docstring Description
     """
 
-    def show(self):
-        """Show a single resource listing
-        ex. Model.find('id')
-            Get().route("/show", {{ class }}
-        """
-
-        pass
-
     def index(self):
         """Show several resource listings
-        ex. Model.all()
-            Get().route("/index", {{ class }}
+           Get().route("/users", "{{ class }}@index").name("index"),
+           ex. Model.all()
         """
+        pass
 
+    def show(self):
+        """Show a single resource listing
+           Get().route("/users/1", "{{ class }}@show").name("show"),
+           ex. Model.find('id')
+        """
+        pass
+
+
+
+    def new(self):
+        """Show form to create new resource
+           ex. Get().route("/users/new", "{{ class }}@new").name("new"),
+        """
         pass
 
     def create(self):
-        """Show form to create new resource listings
-         ex. Get().route("/create", {{ class }}
-        """
-
-        pass
-
-    def store(self):
         """Create a new resource listing
-        ex. Post target to create new Model
-            Post().route("/store", {{ class }})
+           ex. Post().route("/users", "{{ class }}@create").name("create"),
+           ex. Model() then Model.save()
         """
-
         pass
 
     def edit(self):
-        """Show form to edit an existing resource listing
-        ex. Get().route("/edit", {{ class }})
+        """Show form to edit an existing resource
+           ex. Get().route("/users/1/edit", "{{ class }}@edit").name("edit"),
         """
-
         pass
 
     def update(self):
         """Edit an existing resource listing
-        ex. Post target to update new Model
-            Post().route("/update", {{ class }})
+           ex. Patch().route("/users/1", "{{ class }}@update").name("update"),
+           ex. Model.find('id').update()
         """
-
         pass
 
     def destroy(self):
         """Delete an existing resource listing
-        ex. Delete().route("/destroy", {{ class }})
+           ex. Delete().route("/users/1", "{{ class }}@destroy").name("destroy"),
+           ex. Model.find('id').delete()
         """
 
         pass
